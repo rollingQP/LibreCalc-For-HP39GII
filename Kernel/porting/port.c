@@ -36,21 +36,21 @@
 #include "exception.h"
 #include "portmacro.h"
 #include "regstimrot.h"
-
+ 
 /* Scheduler includes. */
 #include "FreeRTOS.h"
 #include "task.h"
 
 /* Constants required to setup the initial stack. */
-#define portINITIAL_SPSR				( ( StackType_t ) 0x1f ) /* System mode, ARM mode, interrupts enabled. */
+#define portINITIAL_SPSR				( ( StackType_t ) 0x1F ) /* SYS mode, ARM mode, interrupts enabled. */
 #define portTHUMB_MODE_BIT				( ( StackType_t ) 0x20 )
 #define portINSTRUCTION_SIZE			( ( StackType_t ) 4 )
 
 /* Constants required to handle critical sections. */
 #define portNO_CRITICAL_NESTING 		( ( uint32_t ) 0 )
-
+ 
 volatile unsigned long ulHighFrequencyTimerTicks;
-
+ 
 /*-----------------------------------------------------------*/
 
 /* Setup the TB to generate the tick interrupts. */
@@ -64,6 +64,30 @@ static void prvSetupTimerInterrupt( void );
  *
  * See header file for description.
  */
+
+void vPortInitialiseNewTaskRegisters(uint32_t *regs_list, StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters) 
+{
+	regs_list[17] = 0;
+	regs_list[16] = (uint32_t) pxCode + portINSTRUCTION_SIZE;
+	regs_list[15] = 0;	//R14
+	regs_list[14] = (uint32_t) pxTopOfStack;	//R13
+	regs_list[13] = 0;	//R12
+	regs_list[12] = 0;	//R11
+	regs_list[11] = 0;	//R10
+	regs_list[10] = 0;	//R9
+	regs_list[9] = 0;	//R8
+	regs_list[8] = 0;	//R7
+	regs_list[7] = 0;	//R6
+	regs_list[6] = 0;	//R5
+	regs_list[5] = 0;	//R4
+	regs_list[4] = 0;	//R3
+	regs_list[3] = 0;	//R2
+	regs_list[2] = 0;	//R1
+	regs_list[1] = (uint32_t) pvParameters;	//R0
+	regs_list[0] = (uint32_t) portINITIAL_SPSR;	//SPSR
+}
+
+#if 0
 StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters )
 {
 StackType_t *pxOriginalTOS;
@@ -83,7 +107,7 @@ StackType_t *pxOriginalTOS;
 	*pxTopOfStack = ( StackType_t ) pxCode + portINSTRUCTION_SIZE;		
 	pxTopOfStack--;
 
-	*pxTopOfStack = ( StackType_t ) 0xaaaaaaaa;	/* R14 */
+	*pxTopOfStack = ( StackType_t ) 0x14141414;	/* R14 */
 	pxTopOfStack--;	
 	*pxTopOfStack = ( StackType_t ) pxOriginalTOS; /* Stack used when task starts goes in R13. */
 	pxTopOfStack--;
@@ -127,16 +151,17 @@ StackType_t *pxOriginalTOS;
 	}
 	#endif
 
-	pxTopOfStack--;
+	//pxTopOfStack--;
 
 	/* Interrupt flags cannot always be stored on the stack and will
 	instead be stored in a variable, which is then saved as part of the
 	tasks context. */
-	*pxTopOfStack = portNO_CRITICAL_NESTING;
+	//*pxTopOfStack = portNO_CRITICAL_NESTING;
 
 	return pxTopOfStack;	
 }
 /*-----------------------------------------------------------*/
+#endif
 
 BaseType_t xPortStartScheduler( void )
 {
@@ -177,6 +202,6 @@ static void prvSetupTimerInterrupt( void )
 	timer_start(0,3000);		//1ms  1kHz
 	
 	timer_set(1,1,0xF,(void *)HighFrequencyTimerISR);
-	timer_start(1,300);		//100us 10kHz	
+	timer_start(1,600);		//200us 5kHz	
 }
 /*-----------------------------------------------------------*/

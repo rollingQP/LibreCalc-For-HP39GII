@@ -42,27 +42,33 @@
 #include "memory.h"
 
 
+
 #define configUSE_TIME_SLICING 1
 
 #define configUSE_PREEMPTION		1
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION		0
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION		1
 #define configUSE_IDLE_HOOK			0
 #define configUSE_TICK_HOOK			0
-#define configCPU_CLOCK_HZ			( ( unsigned long ) 24000000 ) /* Timer clock. */
+#define configCPU_CLOCK_HZ			( ( unsigned long ) 96000000 ) /* Timer clock. */
 #define configTICK_RATE_HZ			( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES		( 5 )
 #define configMINIMAL_STACK_SIZE	( ( unsigned short ) 400 )
-#define configTOTAL_HEAP_SIZE		( ( size_t ) (MEM_MAX - MEM_MIN) )
+
 #define configMAX_TASK_NAME_LEN		( 20 )
 #define configUSE_MUTEXES                       1
 #define configUSE_RECURSIVE_MUTEXES             1
 #define configUSE_COUNTING_SEMAPHORES           1
 
+#define configUSE_NEWLIB_REENTRANT				1
+
+#define configCHECK_FOR_STACK_OVERFLOW          0
+
 #define configUSE_16_BIT_TICKS		0
 #define configIDLE_SHOULD_YIELD		0
 
+#define portCRITICAL_NESTING_IN_TCB 1
 
-#define configUSE_TRACE_FACILITY          	1      
+#define configUSE_TRACE_FACILITY          	1
 #define configGENERATE_RUN_TIME_STATS 		1
 #define configUSE_STATS_FORMATTING_FUNCTIONS 		1
 
@@ -86,6 +92,9 @@ extern volatile unsigned long ulHighFrequencyTimerTicks;
 #define configUSE_CO_ROUTINES 		0
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )
 
+
+#define configCOMMAND_INT_MAX_OUTPUT_SIZE		2048
+
 /* Set the following definitions to 1 to include the API function, or zero
 to exclude the API function. */
 
@@ -105,9 +114,11 @@ to exclude the API function. */
 #define INCLUDE_xEventGroupSetBitFromISR        1
 #define INCLUDE_xTimerPendFunctionCall          0
 #define INCLUDE_xTaskAbortDelay                 0
-#define INCLUDE_xTaskGetHandle                  0
+#define INCLUDE_xTaskGetHandle                  1
 #define INCLUDE_xTaskResumeFromISR              1
 
+void vAssertCalled();
 
+//#define configASSERT( x )   if( x == 0){vAssertCalled();}
 
 #endif /* FREERTOS_CONFIG_H */

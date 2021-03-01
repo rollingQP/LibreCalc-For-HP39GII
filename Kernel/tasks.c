@@ -256,6 +256,9 @@ typedef struct tskTaskControlBlock 			/* The old naming convention is used to pr
 	#if ( portUSING_MPU_WRAPPERS == 1 )
 		xMPU_SETTINGS	xMPUSettings;		/*< The MPU settings are defined as part of the port layer.  THIS MUST BE THE SECOND MEMBER OF THE TCB STRUCT. */
 	#endif
+	volatile uint32_t	context_stack_pointer;
+	volatile uint32_t	context_stack[128];
+	volatile uint32_t	saved_spsr;
 
 	ListItem_t			xStateListItem;	/*< The list that the state list item of a task is reference from denotes the state of that task (Ready, Blocked, Suspended ). */
 	ListItem_t			xEventListItem;		/*< Used to reference a task from an event list. */
@@ -306,6 +309,7 @@ typedef struct tskTaskControlBlock 			/* The old naming convention is used to pr
 		for additional information. */
 		struct	_reent xNewLib_reent;
 	#endif
+	
 
 	#if( configUSE_TASK_NOTIFICATIONS == 1 )
 		volatile uint32_t ulNotifiedValue;
@@ -331,7 +335,6 @@ typedef struct tskTaskControlBlock 			/* The old naming convention is used to pr
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
 below to enable the use of older kernel aware debuggers. */
 typedef tskTCB TCB_t;
-
 /*lint -save -e956 A manual analysis and inspection has been used to determine
 which static variables must be declared volatile. */
 PRIVILEGED_DATA TCB_t * volatile pxCurrentTCB = NULL;
@@ -777,6 +780,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
 				/* Allocate space for the TCB. */
 				pxNewTCB = ( TCB_t * ) pvPortMalloc( sizeof( TCB_t ) ); /*lint !e9087 !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack, and the first member of TCB_t is always a pointer to the task's stack. */
 
+				
 				if( pxNewTCB != NULL )
 				{
 					/* Store the stack location in the TCB. */
@@ -805,6 +809,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
 				pxNewTCB->ucStaticallyAllocated = tskDYNAMICALLY_ALLOCATED_STACK_AND_TCB;
 			}
 			#endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
+
 
 			prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
 			prvAddNewTaskToReadyList( pxNewTCB );
@@ -851,7 +856,7 @@ UBaseType_t x;
 	#if( tskSET_NEW_STACKS_TO_KNOWN_VALUE == 1 )
 	{
 		/* Fill the stack with a known value to assist debugging. */
-		( void ) memset( pxNewTCB->pxStack, ( int ) tskSTACK_FILL_BYTE, ( size_t ) ulStackDepth * sizeof( StackType_t ) );
+		//( void ) memset( pxNewTCB->pxStack, ( int ) tskSTACK_FILL_BYTE, ( size_t ) ulStackDepth * sizeof( StackType_t ) );
 	}
 	#endif /* tskSET_NEW_STACKS_TO_KNOWN_VALUE */
 
@@ -937,6 +942,9 @@ UBaseType_t x;
 		pxNewTCB->uxMutexesHeld = 0;
 	}
 	#endif /* configUSE_MUTEXES */
+	
+	
+
 
 	vListInitialiseItem( &( pxNewTCB->xStateListItem ) );
 	vListInitialiseItem( &( pxNewTCB->xEventListItem ) );
@@ -1055,7 +1063,14 @@ UBaseType_t x;
 		}
 		#else /* portHAS_STACK_OVERFLOW_CHECKING */
 		{
-			pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxTaskCode, pvParameters );
+			void vPortInitialiseNewTaskRegisters(uint32_t *regs_list, StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters) ;
+			memset(pxNewTCB->context_stack,0,sizeof(pxNewTCB->context_stack));
+			vPortInitialiseNewTaskRegisters(pxNewTCB->context_stack, pxTopOfStack, pxTaskCode, pvParameters);
+			pxNewTCB->context_stack_pointer	= (unsigned int)&pxNewTCB->context_stack[17];
+			
+			pxNewTCB->pxTopOfStack = 0xFEFEFEFE;
+			//pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxTaskCode, pvParameters );
+			
 		}
 		#endif /* portHAS_STACK_OVERFLOW_CHECKING */
 	}
@@ -5306,5 +5321,7 @@ when performing module tests). */
 	#endif
 
 #endif
+
+
 
 

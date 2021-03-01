@@ -46,6 +46,8 @@
   #define BOARD_DEVICE_RHPORT_NUM     0
 #endif
 
+
+#define BOARD_DEVICE_RHPORT_SPEED   OPT_MODE_HIGH_SPEED
 // RHPort max operational speed can defined by board.mk
 // Default to Highspeed for MCU with internal HighSpeed PHY (can be port specific), otherwise FullSpeed
 #ifndef BOARD_DEVICE_RHPORT_SPEED
@@ -82,13 +84,13 @@
  * - CFG_TUSB_MEM_ALIGN   : __attribute__ ((aligned(4)))
  */
 #ifndef CFG_TUSB_MEM_SECTION
-#define CFG_TUSB_MEM_SECTION
+#define CFG_TUSB_MEM_SECTION		__attribute__ (( section(".usb_ram") ))
 #endif
-
+ 
 #ifndef CFG_TUSB_MEM_ALIGN
 #define CFG_TUSB_MEM_ALIGN          __attribute__ ((aligned(4)))
 #endif
-
+ 
 //--------------------------------------------------------------------
 // DEVICE CONFIGURATION
 //--------------------------------------------------------------------
@@ -99,7 +101,7 @@
 
 //------------- CLASS -------------//
 #define CFG_TUD_CDC              1
-#define CFG_TUD_MSC              0
+#define CFG_TUD_MSC              1
 #define CFG_TUD_HID              0
 #define CFG_TUD_MIDI             0
 #define CFG_TUD_VENDOR           0
@@ -109,7 +111,7 @@
 #define CFG_TUD_CDC_TX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
 
 // MSC Buffer size of Device Mass storage
-#define CFG_TUD_MSC_EP_BUFSIZE   512
+#define CFG_TUD_MSC_EP_BUFSIZE   2048
 
 #ifdef __cplusplus
  }

@@ -1,62 +1,50 @@
-#include <stdint.h>
+#include <stdarg.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "tusb.h"
 
 /* System serive includes. */
 #include "ServiceUSBDevice.h"
 
+#include "cdc_console.h"
+
 /* Library includes. */
-#include "regsuartdbg.h"
-#include "irq.h"
 #include "display.h"
+#include "irq.h"
+#include "regsuartdbg.h"
 
 /* Kernel includes. */
 #include "FreeRTOS.h"
-#include "task.h"
 #include "queue.h"
+#include "task.h"
 
+#if CFG_TUSB_DEBUG
+#define USBD_STACK_SIZE (3 * configMINIMAL_STACK_SIZE)
+#else
+#define USBD_STACK_SIZE (3 * configMINIMAL_STACK_SIZE / 2)
+#endif
 
-void vServiceUSBCDC( void *pvParameters ){
-	
-	
-	for(;;) {
-		if ( tud_cdc_available() )
-		{
-			uint8_t buf[64];
-	
-			// read and echo back
-			uint32_t count = tud_cdc_read(buf, sizeof(buf));
+StackType_t usb_device_stack[USBD_STACK_SIZE];
+StaticTask_t usb_device_taskdef;
 
-			for(uint32_t i=0; i<count; i++)
-			{
-				tud_cdc_write_char(buf[i]);
-				if ( buf[i] == '\r' ) tud_cdc_write_char('\n');
-			}
-
-			tud_cdc_write_flush();
-		}
-		
-		vTaskDelay(10);
-	}
-	
+void vUsbDeviceTask() {
+    tusb_init();
+    for (;;) {
+        tud_task();
+    }
 }
 
-
-
-void vServiceUSBDevice( void *pvParameters )
-{
-	
-	tusb_init();
-	
-	//xTaskCreate( vServiceUSBCDC, "USB CDC Service", configMINIMAL_STACK_SIZE, NULL, 3, NULL );
-	
-	for(;;){
-		 tud_task();
-
-	}
-	
-	
+void vServiceUSBDevice(void *pvParameters) {
+    //CDCCmdLineQueue = xQueueCreate(32, 64);
+    vTaskDelay(600);
+    
+    xTaskCreateStatic(vUsbDeviceTask, "usbd", USBD_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, usb_device_stack, &usb_device_taskdef);
+    xTaskCreate(vCDC_Console, "CDC Console", configMINIMAL_STACK_SIZE, NULL, 3, NULL);
+    vTaskDelete(NULL);
+    for (;;) {
+        vTaskSuspend(NULL);
+    }
 }

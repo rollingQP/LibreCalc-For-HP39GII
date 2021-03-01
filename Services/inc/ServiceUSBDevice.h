@@ -5,27 +5,15 @@
 
 /* Kernel includes. */
 #include "FreeRTOS.h"
-#include "task.h"
 #include "queue.h"
+#include "task.h"
 
+QueueHandle_t CDCCmdLineQueue;
 
+void vServiceUSBCDC(void *pvParameters);
+void vServiceUSBDevice(void *pvParameters);
 
-/*
-typedef enum {
-	DEBUG_MSG_TYPE_NOP,
-	DEBUG_MSG_TYPE_TO_UART,
-	DEBUG_MSG_TYPE_TO_CONSOLE
-}DebugMsgType;
-
-typedef struct DebugMessage{
-	unsigned int DebugMsgType;
-	unsigned char *text;
-}DebugMessage;
-
-QueueHandle_t DebugQueue;
-*/
-
-void vServiceUSBDevice( void *pvParameters );
+void cdc_printf(const char *fmt, ...);
+void cdc_putchar(const char c);
 
 #endif
-
